@@ -82,6 +82,33 @@ const files = {};  // rug id -> Promise<File[]>, fetched ahead so the share shee
 
 function savePosted() { try { localStorage.setItem(KEY, JSON.stringify(posted)); } catch (e) {} }
 
+// Sheet sync: each tap is queued on the phone and sent to the sheet; anything that fails
+// (no internet) stays queued and is sent again the next time the page opens.
+const SYNC = {"url": "", "token": "NszTc4nRpw91dIWk1mnqUh1JdXQsZVi0", "tab": "Demo"};
+const QKEY = "sheet-queue";
+let queue = {};
+try { queue = JSON.parse(localStorage.getItem(QKEY) || "{}"); } catch (e) {}
+function saveQueue() { try { localStorage.setItem(QKEY, JSON.stringify(queue)); } catch (e) {} }
+
+async function flush() {
+  if (!SYNC.url) return;
+  for (const [id, mark] of Object.entries(queue)) {
+    try {
+      // text/plain keeps this a "simple" request, which Apps Script accepts from another site
+      const res = await fetch(SYNC.url, { method: "POST", headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ token: SYNC.token, tab: SYNC.tab, id, posted: mark.posted, at: mark.at }) });
+      const out = await res.json();
+      if (out.ok && queue[id] && queue[id].at === mark.at) { delete queue[id]; saveQueue(); }
+    } catch (e) { return; }  // offline: try again next time
+  }
+}
+
+function queueMark(id) {
+  queue[id] = { posted: !!posted[id], at: posted[id] || Date.now() };
+  saveQueue();
+  flush();
+}
+
 function getFiles(rug) {
   if (!files[rug.id]) {
     files[rug.id] = Promise.all(rug.photos.map(async (src, i) => {
@@ -142,7 +169,8 @@ async function downloadPhotos(rug, btn) {
 
 async function savePhotos(rug, btn) {
   if (!rug.photos.length) { flash(btn, "No photos"); return; }
-  if (matchMedia("(hover: hover) and (pointer: fine)").matches) {
+  // laptop and Android: straight to Downloads (Android shows them in Gallery); iPhone: share sheet
+  if (matchMedia("(hover: hover) and (pointer: fine)").matches || /Android/i.test(navigator.userAgent)) {
     try { await downloadPhotos(rug, btn); } catch (e) { showLarge(rug); }
     return;
   }
@@ -184,7 +212,7 @@ function card(rug) {
     mk("Copy description", "", b => copy(rug.description, b)),
     mk(posted[rug.id] ? "Posted ✓  (tap to undo)" : "Mark as posted", "posted-btn", () => {
       if (posted[rug.id]) delete posted[rug.id]; else posted[rug.id] = Date.now();
-      savePosted(); render();
+      savePosted(); queueMark(rug.id); render();
     }),
   );
   body.append(title, facts, desc, more, btns);
@@ -205,6 +233,8 @@ function render() {
 
 document.getElementById("close").onclick = () => { document.getElementById("viewer").hidden = true; };
 render();
+flush();
+addEventListener("online", flush);
 </script>
 </body>
 </html>
