@@ -3,78 +3,171 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Furnish Your Room for Less</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<title>Rug Listings</title>
+<meta name="description" content="Rugs ready to post on Facebook Marketplace.">
+<meta name="theme-color" content="#f5f4f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rug Listings">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <style>
-/* One column of rug cards, thumb-reachable buttons; posted rugs sink to the bottom. */
+/* Layout: one column of rug cards (max 560px), sticky progress header, posted rugs in a collapsed "Done" section.
+   One font (the phone's own system font), neutral greys, one dark filled button per card. */
 :root {
-  --bg: #f6f3ef; --card: #ffffff; --ink: #1f1a17; --muted: #6b625b;
-  --line: #e2dbd3; --accent: #8c2f2b; --accent-ink: #ffffff; --ok: #2f6b3a;
-  --font: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg: #f5f4f2; --surface: #ffffff; --sunken: #efedea; --ink: #1c1b1a; --muted: #6f6b67;
+  --line: #e4e1dd; --primary: #1c1b1a; --on-primary: #ffffff; --tonal: #ecebe8; --ok: #2e7d4f;
+  --photo-bg: #ffffff; --shadow: 0 1px 2px rgba(28,27,26,.05), 0 4px 16px rgba(28,27,26,.05);
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --radius: 18px;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #171412; --card: #221e1b; --ink: #f2ece6; --muted: #b3a89f;
-    --line: #3a332e; --accent: #d8665f; --accent-ink: #1a0f0e; --ok: #7fc28b; color-scheme: dark; }
+  :root {
+    --bg: #121212; --surface: #1c1c1d; --sunken: #262627; --ink: #f2f1ef; --muted: #a4a19d;
+    --line: #2f2f31; --primary: #f2f1ef; --on-primary: #121212; --tonal: #2a2a2c; --ok: #5fc48a;
+    --photo-bg: #f4f4f4; --shadow: none; color-scheme: dark;
+  }
 }
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
 body {
-  margin: 0; background: var(--bg); color: var(--ink); font: 18px/1.45 var(--font);
-  padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: max(24px, env(safe-area-inset-bottom));
-  padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right));
+  margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.45 var(--font);
+  padding-bottom: max(32px, env(safe-area-inset-bottom));
 }
-header { max-width: 560px; margin: 0 auto 16px; }
-header h1 { font-size: 1.35rem; margin: 4px 0 2px; text-wrap: balance; }
-header p { margin: 0; color: var(--muted); font-size: 1rem; }
-main { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
-  display: flex; flex-direction: column; }
-.card.posted { opacity: .45; filter: grayscale(1); }
-.hero { width: 100%; aspect-ratio: 4 / 3; object-fit: contain; display: block; background: var(--line); }
-.body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
-.title { font-size: 1.1rem; font-weight: 700; margin: 0; overflow-wrap: anywhere; }
-.facts { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.price { font-size: 2.4rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
-.cond { font-size: 1rem; color: var(--muted); }
-.cond b { color: var(--ink); }
-.desc { font-size: 1rem; color: var(--muted); white-space: pre-line; max-height: 5.8em; overflow: hidden; margin: 0; }
-.desc.open { max-height: none; }
-.more { align-self: flex-start; background: none; border: 0; color: var(--accent); font: inherit; font-size: 1rem;
-  padding: 4px 0; text-decoration: underline; cursor: pointer; }
-.btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-button.big { min-height: 56px; border-radius: 12px; font: 700 1.05rem var(--font); cursor: pointer;
-  border: 2px solid var(--accent); background: var(--card); color: var(--accent); padding: 8px 10px; }
-button.big.primary { background: var(--accent); color: var(--accent-ink); grid-column: 1 / -1; }
-button.big.done { border-color: var(--ok); color: var(--ok); }
-button.big.posted-btn { grid-column: 1 / -1; border-color: var(--line); color: var(--ink); }
-button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.wrap { max-width: 560px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+
+/* header */
+.top { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 88%, transparent);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px); backdrop-filter: saturate(1.4) blur(14px);
+  padding-top: max(14px, env(safe-area-inset-top)); padding-bottom: 14px; border-bottom: 1px solid transparent; }
+.top.scrolled { border-bottom-color: var(--line); }
+.top .wrap { display: flex; flex-direction: column; gap: 12px; }
+h1 { font-size: 1.75rem; line-height: 1.15; letter-spacing: -.02em; margin: 0; }
+.meta { color: var(--muted); font-size: .95rem; margin: 4px 0 0; }
+.progress { display: flex; flex-direction: column; gap: 7px; }
+.progress .row { display: flex; justify-content: space-between; font-size: .9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.progress .row b { color: var(--ink); font-weight: 600; }
+.bar { height: 6px; border-radius: 999px; background: var(--sunken); overflow: hidden; }
+.bar span { display: block; height: 100%; width: 0; background: var(--ok); border-radius: inherit; }
+
+main { display: flex; flex-direction: column; gap: 18px; padding-top: 6px; }
+
+/* card */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+.gallery { position: relative; background: var(--photo-bg); }
+.slides { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
+.slides::-webkit-scrollbar { display: none; }
+.slides img { flex: 0 0 100%; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; scroll-snap-align: center; display: block; background: var(--photo-bg); }
+.slides img.product { object-fit: contain; }
+.dots { position: absolute; left: 0; right: 0; bottom: 10px; display: flex; justify-content: center; gap: 6px; pointer-events: none; }
+.dots i { width: 6px; height: 6px; border-radius: 50%; background: #ffffff; opacity: .5; box-shadow: 0 0 3px rgba(0,0,0,.45); }
+.dots i.on { opacity: 1; }
+.badge { position: absolute; top: 10px; right: 10px; background: rgba(20,20,20,.62); color: #ffffff; font-size: .8rem;
+  padding: 3px 9px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+
+.body { padding: 16px 16px 14px; display: flex; flex-direction: column; gap: 14px; }
+.title { font-size: 1.05rem; font-weight: 600; line-height: 1.35; margin: 0; overflow-wrap: anywhere; }
+.price { font-size: 2.1rem; font-weight: 700; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin: 0; }
+.price small { font-size: .95rem; font-weight: 500; color: var(--muted); letter-spacing: 0; margin-left: 6px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.tags li { font-size: .82rem; padding: 4px 10px; border-radius: 999px; background: var(--sunken); color: var(--ink); }
+.tags li.unknown { color: var(--muted); }
+
+details.desc { border-top: 1px solid var(--line); padding-top: 10px; }
+details.desc summary { cursor: pointer; color: var(--muted); font-size: .95rem; list-style: none; display: flex; justify-content: space-between; align-items: center; min-height: 32px; }
+details.desc summary::-webkit-details-marker { display: none; }
+details.desc summary::after { content: ""; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translateY(-3px); }
+details.desc[open] summary::after { transform: rotate(-135deg) translateY(-1px); }
+details.desc p { margin: 8px 0 0; font-size: .95rem; color: var(--ink); white-space: pre-line; }
+
+.actions { display: flex; flex-direction: column; gap: 8px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn { appearance: none; border: 0; border-radius: 14px; min-height: 52px; padding: 10px 12px; font: 600 1rem var(--font);
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn.primary { background: var(--primary); color: var(--on-primary); min-height: 56px; font-size: 1.05rem; }
+.btn.tonal { background: var(--tonal); color: var(--ink); }
+.btn.ok { background: color-mix(in srgb, var(--ok) 16%, var(--surface)); color: var(--ok); }
+.btn.text { background: none; color: var(--muted); min-height: 44px; font-weight: 500; font-size: .95rem; text-decoration: underline; text-underline-offset: 3px; }
+.btn:active { transform: scale(.985); }
+.btn:focus-visible, summary:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.btn svg { width: 20px; height: 20px; flex: none; }
+.pair .btn { font-size: .95rem; padding: 10px 8px; }
+.pair .btn:not(.ok) svg { display: none; }  /* keeps "Copy description" on one line on small phones */
+
+/* done section */
+details.done-section { margin-top: 10px; }
+details.done-section > summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 4px; color: var(--muted); font-weight: 600; font-size: .95rem; }
+details.done-section > summary::-webkit-details-marker { display: none; }
+details.done-section > summary .chev { width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }
+details.done-section[open] > summary .chev { transform: rotate(-135deg); }
+.done-list { display: flex; flex-direction: column; gap: 10px; }
+.done-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 8px; }
+.done-row img { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; flex: none; background: var(--photo-bg); }
+.done-row .t { flex: 1; min-width: 0; font-size: .92rem; color: var(--muted); }
+.done-row .t b { display: block; color: var(--ink); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.done-row .btn.text { min-height: 40px; padding: 6px 10px; }
+
+.empty { text-align: center; color: var(--muted); padding: 28px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+
+footer { margin-top: 28px; text-align: center; color: var(--muted); font-size: .85rem; }
+
+/* toast */
+.toast { position: fixed; left: 50%; bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px)); transform: translate(-50%, 20px);
+  background: var(--primary); color: var(--on-primary); padding: 10px 18px; border-radius: 999px; font-weight: 600; font-size: .95rem;
+  opacity: 0; pointer-events: none; z-index: 20; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
 /* large-photo fallback for long-press saving */
-.viewer { position: fixed; inset: 0; background: var(--bg); overflow-y: auto; z-index: 10;
+.viewer { position: fixed; inset: 0; background: var(--bg); overflow-y: auto; z-index: 30;
   padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
-.viewer .top { position: sticky; top: 0; background: var(--bg); padding: 8px 0 12px; display: flex; flex-direction: column; gap: 10px; }
-.viewer p { margin: 0; font-size: 1.05rem; }
+.viewer .vtop { position: sticky; top: 0; background: var(--bg); padding: 8px 0 12px; display: flex; flex-direction: column; gap: 10px; max-width: 560px; margin: 0 auto; }
+.viewer p { margin: 0; }
 .viewer .list { display: flex; flex-direction: column; gap: 14px; max-width: 560px; margin: 0 auto; }
-.viewer img { width: 100%; border-radius: 10px; display: block; -webkit-touch-callout: default; }
-@media (prefers-reduced-motion: no-preference) { .card { transition: opacity .2s; } }
+.viewer img { width: 100%; border-radius: 12px; display: block; -webkit-touch-callout: default; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .bar span { transition: width .4s ease; }
+  .toast { transition: opacity .2s, transform .2s; }
+  .btn { transition: transform .08s, background-color .2s, color .2s; }
+}
 </style>
 </head>
 <body>
-<header>
-  <h1>Furnish Your Room for Less</h1>
-  <p id="count"></p>
-</header>
-<main id="list"></main>
+<div class="top" id="top">
+  <div class="wrap">
+    <div>
+      <h1>Your listings</h1>
+      <p class="meta">Lot 21136125 · 10 rugs</p>
+    </div>
+    <div class="progress" aria-live="polite">
+      <div class="row"><b id="count"></b><span id="left"></span></div>
+      <div class="bar"><span id="bar"></span></div>
+    </div>
+  </div>
+</div>
+<div class="wrap">
+  <main id="list"></main>
+  <details class="done-section" id="done-section" hidden>
+    <summary><span id="done-label">Done</span><span class="chev" aria-hidden="true"></span></summary>
+    <div class="done-list" id="done-list"></div>
+  </details>
+  <footer>Prepared by Threshold</footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="viewer" id="viewer" hidden>
-  <div class="top">
+  <div class="vtop">
     <p><b>Press and hold each photo</b>, then tap <b>Save to Photos</b>.</p>
-    <button class="big primary" id="close">Done</button>
+    <button class="btn primary" id="close" type="button">Done</button>
   </div>
   <div class="list" id="viewer-list"></div>
 </div>
 <script>
-const RUGS = [{"id": "1_qIIUVmRJ302rkd3JmAr-n_AkZ392zvP", "title": "10' x 10' Hermitage Round Rug - SNOW WHITE", "price": "175", "condition": "", "description": "$175 OBO\n\nThe Hermitage Collection offers a subtly textured and patterned 10 Ft Round rug, crafted from a durable blend of 55% Polypropylene and 45% Polyester. It features a refined geometric motif expressed in a palette of Snow White and Beige, set against a Snow White background. The piece's neutral tones and clean design ensure versatility in a variety of interior settings.\n\nThe rug's low pile and stain-resistant materials provide a practical solution for high-traffic areas, making maintenance effortless. Its shed-free quality ensures that the rug maintains a consistent appearance over time. The sophisticated yet understated pattern complements contemporary, minimalist, and Scandinavian decors, acting as a grounding element in living rooms, bedrooms, or under a dining table in an open-plan space. This Hermitage rug's serene color scheme and round shape would also work well in rooms aiming for a soft, tranquil feel, such as a nursery or a restful reading nook.", "photos": ["photos/1_qIIUVmRJ302rkd3JmAr-n_AkZ392zvP/1.jpg", "photos/1_qIIUVmRJ302rkd3JmAr-n_AkZ392zvP/2.jpg", "photos/1_qIIUVmRJ302rkd3JmAr-n_AkZ392zvP/3.jpg", "photos/1_qIIUVmRJ302rkd3JmAr-n_AkZ392zvP/4.jpg", "photos/1_qIIUVmRJ302rkd3JmAr-n_AkZ392zvP/5.jpg"]}, {"id": "14Gn408lmuhuyhIy1ERcWgwr3UlqwH2P9", "title": "10' x 10' Oregon Round Rug - IVORY", "price": "125", "condition": "", "description": "$125 OBO\n\nA softly distressed medallion anchors this round rug, its ornamental center and decorative border rendered in a washed palette of ivory, beige, and gray. The ivory background brightens the design while the beige field and subtle gray outlining create gentle contrast, giving the pattern a lived-in, layered look. The floral and scroll motifs are deliberately muted, so the overall effect reads as vintage-inspired without heavy contrast.\n\nMachine made from 85% polypropylene and 15% polyester, the rug has a low, dense pile that feels smooth underfoot with a slight velvety touch. Its neutral tones and understated ornamentation make it well suited for transitional, coastal, or modern farmhouse interiors. Use it beneath a round dining table to ground the space, place it under a circular seating arrangement in a living room, or layer it in a bedroom beneath the bed to add warmth and visual interest. Pair with natural wood furniture and soft linens for a relaxed look, or add black metal accents and textured throws for a contemporary contrast.", "photos": ["photos/14Gn408lmuhuyhIy1ERcWgwr3UlqwH2P9/1.jpg", "photos/14Gn408lmuhuyhIy1ERcWgwr3UlqwH2P9/2.jpg", "photos/14Gn408lmuhuyhIy1ERcWgwr3UlqwH2P9/3.jpg", "photos/14Gn408lmuhuyhIy1ERcWgwr3UlqwH2P9/4.jpg", "photos/14Gn408lmuhuyhIy1ERcWgwr3UlqwH2P9/5.jpg"]}, {"id": "1kDFKmmp7zfeYJjLigZjTxuDrz-3u1CBY", "title": "10' x 14' Blossom Rug - MULTICOLORED", "price": "250", "condition": "", "description": "$250 OBO\n\nAn all-over botanical pattern fills the surface with overlapping tropical leaves and textured fronds rendered in painterly detail. Variegated stripes, ribbed veins and soft shading create depth across a multi-toned background, while pops of rust red and warm beige lift the deeper olive, hunter green and brown tones. Ivory highlights balance the palette and bring subtle contrast so the design reads lively without feeling busy.\n\nMachine-made from 100% polypropylene, the rug has a low, dense pile that feels smooth underfoot and shows the pattern crisply. Its durable construction and grounded color story make it suited to larger living areas or open-plan rooms where you want a strong focal layer. Pair it with warm wood furniture, leather or rattan pieces for a grounded, natural look, or use it in a sunroom or home office to introduce a botanical, layered feel without overwhelming the space.", "photos": ["photos/1kDFKmmp7zfeYJjLigZjTxuDrz-3u1CBY/1.jpg", "photos/1kDFKmmp7zfeYJjLigZjTxuDrz-3u1CBY/2.jpg", "photos/1kDFKmmp7zfeYJjLigZjTxuDrz-3u1CBY/3.jpg", "photos/1kDFKmmp7zfeYJjLigZjTxuDrz-3u1CBY/4.jpg"]}, {"id": "1jcj6Yi2cjj-0WsXrz6-fzvhS1MEjXMZ1", "title": "10' x 12' 4 Lola Rug - BRICK RED", "price": "175", "condition": "", "description": "$175 OBO\n\nA rich brick red field sets the stage for an antique-inspired medallion and scrolling vine pattern rendered in vibrant blues, light blue highlights, ivory, orange and yellow. The design has a gently distressed look that reveals layered color beneath the surface, giving the motif a lived-in, vintage character while a narrow, lighter floral border frames the composition. Running your hand across the surface, you’ll notice a low-pile, tightly woven feel; the machine-made polypropylene construction offers a soft hand with a subtle sheen that showcases the color contrasts and fine line work.\n\nThis rug works well as an anchor in a living room beneath a sofa and coffee table, under a dining table to introduce warmth, or in a study to add color and pattern without overwhelming the space. It pairs naturally with warm wood furniture, navy or cream upholstery, and brass or matte-black accents, and complements transitional, eclectic, or Mediterranean-inspired interiors that benefit from bold color and layered texture.", "photos": ["photos/1jcj6Yi2cjj-0WsXrz6-fzvhS1MEjXMZ1/1.jpg", "photos/1jcj6Yi2cjj-0WsXrz6-fzvhS1MEjXMZ1/2.jpg", "photos/1jcj6Yi2cjj-0WsXrz6-fzvhS1MEjXMZ1/3.jpg", "photos/1jcj6Yi2cjj-0WsXrz6-fzvhS1MEjXMZ1/4.jpg", "photos/1jcj6Yi2cjj-0WsXrz6-fzvhS1MEjXMZ1/5.jpg"]}, {"id": "14zNlmQFmLH709mbngEMCkwG77Izkcsgo", "title": "10' x 13' Oregon Rug - GRAY", "price": "175", "condition": "", "description": "$175 OBO\n\nSoft to the touch and deliberately aged in appearance, this machine-made rug is woven from 85% polypropylene and 15% polyester for a low-profile pile with a smooth hand and a gentle, understated sheen. The gray field provides a neutral canvas for an antique-inspired medallion motif and ornate border, where weathered beige and muted blue accents are worked into floral and scroll details. The overall effect is a vintage, distressed look that keeps the pattern visible without feeling busy.\n\nThis rug pairs well with warm wood tones or cool metal finishes and can anchor a living room seating area, add grounding texture beneath a dining table, or soften a master bedroom’s layered bedding. It complements transitional, coastal, or modern farmhouse schemes—use navy throw pillows or beige linens to pick up the accent hues, or keep furnishings minimal to let the rug’s patina and pattern provide visual interest.", "photos": ["photos/14zNlmQFmLH709mbngEMCkwG77Izkcsgo/1.jpg", "photos/14zNlmQFmLH709mbngEMCkwG77Izkcsgo/2.jpg", "photos/14zNlmQFmLH709mbngEMCkwG77Izkcsgo/3.jpg", "photos/14zNlmQFmLH709mbngEMCkwG77Izkcsgo/4.jpg", "photos/14zNlmQFmLH709mbngEMCkwG77Izkcsgo/5.jpg"]}, {"id": "1gvyiTBbJJmkbsH7QekT8cGk5tI_Y2huT", "title": "10' x 13' Solid Frieze Rug - PINK", "price": "200", "condition": "", "description": "$200 OBO\n\nA uniform blush pink hue defines this solid piece from the Solid Frieze Collection, offering a clean, contemporary aesthetic without visual clutter. Machine-made in Turkey from 100% polypropylene, it features a textured frieze pile that provides a soft, resilient surface underfoot. The monochromatic design emphasizes pure color and inviting texture, making it a reliable foundational layer for high-comfort interior spaces.\n\nAt 10x13, this large rectangular rug provides extensive floor coverage to anchor spacious living rooms, home offices, or children's play areas. The soft pink tone pairs effortlessly with neutral color schemes, including crisp whites, warm creams, and light greys. Position it beneath an expansive sectional sofa, a king-sized bed frame, or light wood furniture to create a grounded, cohesive look in modern, minimalist, or coastal interiors.", "photos": ["photos/1gvyiTBbJJmkbsH7QekT8cGk5tI_Y2huT/1.jpg", "photos/1gvyiTBbJJmkbsH7QekT8cGk5tI_Y2huT/2.jpg", "photos/1gvyiTBbJJmkbsH7QekT8cGk5tI_Y2huT/3.jpg", "photos/1gvyiTBbJJmkbsH7QekT8cGk5tI_Y2huT/4.jpg", "photos/1gvyiTBbJJmkbsH7QekT8cGk5tI_Y2huT/5.jpg"]}, {"id": "1bktElPq9qafpUJsDUMw9zaEhImoL7o8Y", "title": "10' x 13' Solid Shag Rug - TAUPE", "price": "175", "condition": "", "description": "$175 OBO\n\nA solid taupe rug with a deep shag pile, machine-made from 100% polypropylene. The dense fibers create a soft, cushioned surface you can feel underfoot—plush and slightly springy—while subtle tonal shifts in the yarn add visual depth without any distinct pattern. The overall look is clean and understated, letting the texture be the focal point.\n\nThis neutral piece works well as an anchor for a living room seating area, a cozy layer under a bed, or a relaxed family room where softness matters. It pairs naturally with warm woods, leather accents, and layered textiles in both contemporary and transitional interiors, and complements mid-century modern or rustic furnishings alike. The machine-made construction yields an even pile and consistent texture across the rug.", "photos": ["photos/1bktElPq9qafpUJsDUMw9zaEhImoL7o8Y/1.jpg", "photos/1bktElPq9qafpUJsDUMw9zaEhImoL7o8Y/2.jpg", "photos/1bktElPq9qafpUJsDUMw9zaEhImoL7o8Y/3.jpg", "photos/1bktElPq9qafpUJsDUMw9zaEhImoL7o8Y/4.jpg", "photos/1bktElPq9qafpUJsDUMw9zaEhImoL7o8Y/5.jpg"]}, {"id": "1c2-ioAOoWAVifVkVmdJwpJ8Lp6yEZq_v", "title": "10' x 13' Infinity Shag Rug - LINEN", "price": "235", "condition": "", "description": "$235 OBO\n\nA linen ground provides a neutral, soft backdrop while a subtle, low-relief linear pattern gives the surface quiet depth and interest. The long, plush pile is machine made from 100% polyester and feels dense and cushiony underfoot; the yarns form gentle striations that add a layered, tactile quality across the field. The overall effect is a warm, subdued texture that complements a range of interiors without calling attention to itself.\n\nPlace this rug under a sofa grouping to anchor a living room, layer it at the foot of a bed for added comfort, or use it to define a seating area in an open-plan space. It pairs well with Scandinavian and contemporary schemes, natural wood furniture, soft linens, and brushed metal accents for a calm, modern look.", "photos": ["photos/1c2-ioAOoWAVifVkVmdJwpJ8Lp6yEZq_v/1.jpg", "photos/1c2-ioAOoWAVifVkVmdJwpJ8Lp6yEZq_v/2.jpg", "photos/1c2-ioAOoWAVifVkVmdJwpJ8Lp6yEZq_v/3.jpg", "photos/1c2-ioAOoWAVifVkVmdJwpJ8Lp6yEZq_v/4.jpg", "photos/1c2-ioAOoWAVifVkVmdJwpJ8Lp6yEZq_v/5.jpg"]}, {"id": "17XyqaWUM0wINeAmLr_SJ_036TcgQiywd", "title": "10' x 13' 1 Lotus Rug - TEAL", "price": "160", "condition": "", "description": "$160 OBO\n\nAn abstract, painterly design softens the room with layered, distressed washes of color set against a teal background. Irregular patches of beige, ivory, light blue, and gray blend into one another in a watercolor-like pattern that balances contemporary and transitional aesthetics. The surface reads as gently worn and lived-in, giving the rug a subtle, artistic presence without a defined medallion or border.\n\nConstructed from 100% polypropylene, the rug has a low pile with a softly cushioned feel underfoot and a mild sheen that catches light without overpowering the palette. Pair it with light wood furniture and neutral upholstery for a coastal-modern look, use it to warm a serene bedroom with ivory linens and pale blues, or layer it in a transitional living room to add color and texture beneath a simple sofa and coffee table.", "photos": ["photos/17XyqaWUM0wINeAmLr_SJ_036TcgQiywd/1.jpg", "photos/17XyqaWUM0wINeAmLr_SJ_036TcgQiywd/2.jpg", "photos/17XyqaWUM0wINeAmLr_SJ_036TcgQiywd/3.jpg", "photos/17XyqaWUM0wINeAmLr_SJ_036TcgQiywd/4.jpg", "photos/17XyqaWUM0wINeAmLr_SJ_036TcgQiywd/5.jpg"]}, {"id": "1S4nVA0y_M20Rc4h8zFkfYVSrfyCXuBap", "title": "10' x 13' Nain Design Rug - IVORY", "price": "235", "condition": "", "description": "$235 OBO\n\nA dense pictorial paradise unfolds across this piece from the Nain Design Collection. Machine-made in Turkey from a blend of 85% polypropylene and 15% polyester, the rug showcases an intricate botanical and wildlife scene complete with graceful deer, birds, and flowering vines. A soft ivory and cream field provides a bright background for detailed accents of navy blue, soft blue, green, beige, and touches of burgundy. The textured high-low pile adds physical depth to the detailed floral borders and ornate pictorial motifs, offering a soft feel underfoot.\n\nThis grand 10x13 rectangular rug provides expansive floor coverage ideal for anchoring large formal living rooms, primary suites, or executive home offices. Place it beneath a traditional mahogany or walnut dining set, or position it under neutral linen seating to highlight its classic color palette. It pairs naturally with warm wood tones, brass hardware, and muted jewel tones throughout the home.", "photos": ["photos/1S4nVA0y_M20Rc4h8zFkfYVSrfyCXuBap/1.jpg", "photos/1S4nVA0y_M20Rc4h8zFkfYVSrfyCXuBap/2.jpg", "photos/1S4nVA0y_M20Rc4h8zFkfYVSrfyCXuBap/3.jpg", "photos/1S4nVA0y_M20Rc4h8zFkfYVSrfyCXuBap/4.jpg", "photos/1S4nVA0y_M20Rc4h8zFkfYVSrfyCXuBap/5.jpg"]}];
+const RUGS = [{"id": "1_qIIUVmRJ302rkd3JmAr-n_AkZ392zvP", "title": "10' x 10' Hermitage Round Rug - SNOW WHITE", "price": "175", "condition": "", "description": "$175 OBO\n\nThe Hermitage Collection offers a subtly textured and patterned 10 Ft Round rug, crafted from a durable blend of 55% Polypropylene and 45% Polyester. It features a refined geometric motif expressed in a palette of Snow White and Beige, set against a Snow White background. The piece's neutral tones and clean design ensure versatility in a variety of interior settings.\n\nThe rug's low pile and stain-resistant materials provide a practical solution for high-traffic areas, making maintenance effortless. Its shed-free quality ensures that the rug maintains a consistent appearance over time. The sophisticated yet understated pattern complements contemporary, minimalist, and Scandinavian decors, acting as a grounding element in living rooms, bedrooms, or under a dining table in an open-plan space. This Hermitage rug's serene color scheme and round shape would also work well in rooms aiming for a soft, tranquil feel, such as a nursery or a restful reading nook.", "photos": ["photos/1_qIIUVmRJ302rkd3JmAr-n_AkZ392zvP/1.jpg", "photos/1_qIIUVmRJ302rkd3JmAr-n_AkZ392zvP/2.jpg", "photos/1_qIIUVmRJ302rkd3JmAr-n_AkZ392zvP/3.jpg", "photos/1_qIIUVmRJ302rkd3JmAr-n_AkZ392zvP/4.jpg", "photos/1_qIIUVmRJ302rkd3JmAr-n_AkZ392zvP/5.jpg"], "views": ["photos/1_qIIUVmRJ302rkd3JmAr-n_AkZ392zvP/v1.jpg", "photos/1_qIIUVmRJ302rkd3JmAr-n_AkZ392zvP/v2.jpg", "photos/1_qIIUVmRJ302rkd3JmAr-n_AkZ392zvP/v3.jpg", "photos/1_qIIUVmRJ302rkd3JmAr-n_AkZ392zvP/v4.jpg", "photos/1_qIIUVmRJ302rkd3JmAr-n_AkZ392zvP/v5.jpg"], "rooms": 4, "size": "10' x 10' Round", "quantity": 1}, {"id": "14Gn408lmuhuyhIy1ERcWgwr3UlqwH2P9", "title": "10' x 10' Oregon Round Rug - IVORY", "price": "125", "condition": "", "description": "$125 OBO\n\nA softly distressed medallion anchors this round rug, its ornamental center and decorative border rendered in a washed palette of ivory, beige, and gray. The ivory background brightens the design while the beige field and subtle gray outlining create gentle contrast, giving the pattern a lived-in, layered look. The floral and scroll motifs are deliberately muted, so the overall effect reads as vintage-inspired without heavy contrast.\n\nMachine made from 85% polypropylene and 15% polyester, the rug has a low, dense pile that feels smooth underfoot with a slight velvety touch. Its neutral tones and understated ornamentation make it well suited for transitional, coastal, or modern farmhouse interiors. Use it beneath a round dining table to ground the space, place it under a circular seating arrangement in a living room, or layer it in a bedroom beneath the bed to add warmth and visual interest. Pair with natural wood furniture and soft linens for a relaxed look, or add black metal accents and textured throws for a contemporary contrast.", "photos": ["photos/14Gn408lmuhuyhIy1ERcWgwr3UlqwH2P9/1.jpg", "photos/14Gn408lmuhuyhIy1ERcWgwr3UlqwH2P9/2.jpg", "photos/14Gn408lmuhuyhIy1ERcWgwr3UlqwH2P9/3.jpg", "photos/14Gn408lmuhuyhIy1ERcWgwr3UlqwH2P9/4.jpg", "photos/14Gn408lmuhuyhIy1ERcWgwr3UlqwH2P9/5.jpg"], "views": ["photos/14Gn408lmuhuyhIy1ERcWgwr3UlqwH2P9/v1.jpg", "photos/14Gn408lmuhuyhIy1ERcWgwr3UlqwH2P9/v2.jpg", "photos/14Gn408lmuhuyhIy1ERcWgwr3UlqwH2P9/v3.jpg", "photos/14Gn408lmuhuyhIy1ERcWgwr3UlqwH2P9/v4.jpg", "photos/14Gn408lmuhuyhIy1ERcWgwr3UlqwH2P9/v5.jpg"], "rooms": 3, "size": "10' x 10' Round", "quantity": 1}, {"id": "1kDFKmmp7zfeYJjLigZjTxuDrz-3u1CBY", "title": "10' x 14' Blossom Rug - MULTICOLORED", "price": "250", "condition": "", "description": "$250 OBO\n\nAn all-over botanical pattern fills the surface with overlapping tropical leaves and textured fronds rendered in painterly detail. Variegated stripes, ribbed veins and soft shading create depth across a multi-toned background, while pops of rust red and warm beige lift the deeper olive, hunter green and brown tones. Ivory highlights balance the palette and bring subtle contrast so the design reads lively without feeling busy.\n\nMachine-made from 100% polypropylene, the rug has a low, dense pile that feels smooth underfoot and shows the pattern crisply. Its durable construction and grounded color story make it suited to larger living areas or open-plan rooms where you want a strong focal layer. Pair it with warm wood furniture, leather or rattan pieces for a grounded, natural look, or use it in a sunroom or home office to introduce a botanical, layered feel without overwhelming the space.", "photos": ["photos/1kDFKmmp7zfeYJjLigZjTxuDrz-3u1CBY/1.jpg", "photos/1kDFKmmp7zfeYJjLigZjTxuDrz-3u1CBY/2.jpg", "photos/1kDFKmmp7zfeYJjLigZjTxuDrz-3u1CBY/3.jpg", "photos/1kDFKmmp7zfeYJjLigZjTxuDrz-3u1CBY/4.jpg"], "views": ["photos/1kDFKmmp7zfeYJjLigZjTxuDrz-3u1CBY/v1.jpg", "photos/1kDFKmmp7zfeYJjLigZjTxuDrz-3u1CBY/v2.jpg", "photos/1kDFKmmp7zfeYJjLigZjTxuDrz-3u1CBY/v3.jpg", "photos/1kDFKmmp7zfeYJjLigZjTxuDrz-3u1CBY/v4.jpg"], "rooms": 3, "size": "10' x 14'", "quantity": 1}, {"id": "1jcj6Yi2cjj-0WsXrz6-fzvhS1MEjXMZ1", "title": "10' x 12' 4 Lola Rug - BRICK RED", "price": "175", "condition": "", "description": "$175 OBO\n\nA rich brick red field sets the stage for an antique-inspired medallion and scrolling vine pattern rendered in vibrant blues, light blue highlights, ivory, orange and yellow. The design has a gently distressed look that reveals layered color beneath the surface, giving the motif a lived-in, vintage character while a narrow, lighter floral border frames the composition. Running your hand across the surface, you’ll notice a low-pile, tightly woven feel; the machine-made polypropylene construction offers a soft hand with a subtle sheen that showcases the color contrasts and fine line work.\n\nThis rug works well as an anchor in a living room beneath a sofa and coffee table, under a dining table to introduce warmth, or in a study to add color and pattern without overwhelming the space. It pairs naturally with warm wood furniture, navy or cream upholstery, and brass or matte-black accents, and complements transitional, eclectic, or Mediterranean-inspired interiors that benefit from bold color and layered texture.", "photos": ["photos/1jcj6Yi2cjj-0WsXrz6-fzvhS1MEjXMZ1/1.jpg", "photos/1jcj6Yi2cjj-0WsXrz6-fzvhS1MEjXMZ1/2.jpg", "photos/1jcj6Yi2cjj-0WsXrz6-fzvhS1MEjXMZ1/3.jpg", "photos/1jcj6Yi2cjj-0WsXrz6-fzvhS1MEjXMZ1/4.jpg", "photos/1jcj6Yi2cjj-0WsXrz6-fzvhS1MEjXMZ1/5.jpg"], "views": ["photos/1jcj6Yi2cjj-0WsXrz6-fzvhS1MEjXMZ1/v1.jpg", "photos/1jcj6Yi2cjj-0WsXrz6-fzvhS1MEjXMZ1/v2.jpg", "photos/1jcj6Yi2cjj-0WsXrz6-fzvhS1MEjXMZ1/v3.jpg", "photos/1jcj6Yi2cjj-0WsXrz6-fzvhS1MEjXMZ1/v4.jpg", "photos/1jcj6Yi2cjj-0WsXrz6-fzvhS1MEjXMZ1/v5.jpg"], "rooms": 3, "size": "10' x 12' 4", "quantity": 1}, {"id": "14zNlmQFmLH709mbngEMCkwG77Izkcsgo", "title": "10' x 13' Oregon Rug - GRAY", "price": "175", "condition": "", "description": "$175 OBO\n\nSoft to the touch and deliberately aged in appearance, this machine-made rug is woven from 85% polypropylene and 15% polyester for a low-profile pile with a smooth hand and a gentle, understated sheen. The gray field provides a neutral canvas for an antique-inspired medallion motif and ornate border, where weathered beige and muted blue accents are worked into floral and scroll details. The overall effect is a vintage, distressed look that keeps the pattern visible without feeling busy.\n\nThis rug pairs well with warm wood tones or cool metal finishes and can anchor a living room seating area, add grounding texture beneath a dining table, or soften a master bedroom’s layered bedding. It complements transitional, coastal, or modern farmhouse schemes—use navy throw pillows or beige linens to pick up the accent hues, or keep furnishings minimal to let the rug’s patina and pattern provide visual interest.", "photos": ["photos/14zNlmQFmLH709mbngEMCkwG77Izkcsgo/1.jpg", "photos/14zNlmQFmLH709mbngEMCkwG77Izkcsgo/2.jpg", "photos/14zNlmQFmLH709mbngEMCkwG77Izkcsgo/3.jpg", "photos/14zNlmQFmLH709mbngEMCkwG77Izkcsgo/4.jpg", "photos/14zNlmQFmLH709mbngEMCkwG77Izkcsgo/5.jpg"], "views": ["photos/14zNlmQFmLH709mbngEMCkwG77Izkcsgo/v1.jpg", "photos/14zNlmQFmLH709mbngEMCkwG77Izkcsgo/v2.jpg", "photos/14zNlmQFmLH709mbngEMCkwG77Izkcsgo/v3.jpg", "photos/14zNlmQFmLH709mbngEMCkwG77Izkcsgo/v4.jpg", "photos/14zNlmQFmLH709mbngEMCkwG77Izkcsgo/v5.jpg"], "rooms": 3, "size": "10' x 13'", "quantity": 1}, {"id": "1gvyiTBbJJmkbsH7QekT8cGk5tI_Y2huT", "title": "10' x 13' Solid Frieze Rug - PINK", "price": "200", "condition": "", "description": "$200 OBO\n\nA uniform blush pink hue defines this solid piece from the Solid Frieze Collection, offering a clean, contemporary aesthetic without visual clutter. Machine-made in Turkey from 100% polypropylene, it features a textured frieze pile that provides a soft, resilient surface underfoot. The monochromatic design emphasizes pure color and inviting texture, making it a reliable foundational layer for high-comfort interior spaces.\n\nAt 10x13, this large rectangular rug provides extensive floor coverage to anchor spacious living rooms, home offices, or children's play areas. The soft pink tone pairs effortlessly with neutral color schemes, including crisp whites, warm creams, and light greys. Position it beneath an expansive sectional sofa, a king-sized bed frame, or light wood furniture to create a grounded, cohesive look in modern, minimalist, or coastal interiors.", "photos": ["photos/1gvyiTBbJJmkbsH7QekT8cGk5tI_Y2huT/1.jpg", "photos/1gvyiTBbJJmkbsH7QekT8cGk5tI_Y2huT/2.jpg", "photos/1gvyiTBbJJmkbsH7QekT8cGk5tI_Y2huT/3.jpg", "photos/1gvyiTBbJJmkbsH7QekT8cGk5tI_Y2huT/4.jpg", "photos/1gvyiTBbJJmkbsH7QekT8cGk5tI_Y2huT/5.jpg"], "views": ["photos/1gvyiTBbJJmkbsH7QekT8cGk5tI_Y2huT/v1.jpg", "photos/1gvyiTBbJJmkbsH7QekT8cGk5tI_Y2huT/v2.jpg", "photos/1gvyiTBbJJmkbsH7QekT8cGk5tI_Y2huT/v3.jpg", "photos/1gvyiTBbJJmkbsH7QekT8cGk5tI_Y2huT/v4.jpg", "photos/1gvyiTBbJJmkbsH7QekT8cGk5tI_Y2huT/v5.jpg"], "rooms": 3, "size": "10' x 13'", "quantity": 1}, {"id": "1bktElPq9qafpUJsDUMw9zaEhImoL7o8Y", "title": "10' x 13' Solid Shag Rug - TAUPE", "price": "175", "condition": "", "description": "$175 OBO\n\nA solid taupe rug with a deep shag pile, machine-made from 100% polypropylene. The dense fibers create a soft, cushioned surface you can feel underfoot—plush and slightly springy—while subtle tonal shifts in the yarn add visual depth without any distinct pattern. The overall look is clean and understated, letting the texture be the focal point.\n\nThis neutral piece works well as an anchor for a living room seating area, a cozy layer under a bed, or a relaxed family room where softness matters. It pairs naturally with warm woods, leather accents, and layered textiles in both contemporary and transitional interiors, and complements mid-century modern or rustic furnishings alike. The machine-made construction yields an even pile and consistent texture across the rug.", "photos": ["photos/1bktElPq9qafpUJsDUMw9zaEhImoL7o8Y/1.jpg", "photos/1bktElPq9qafpUJsDUMw9zaEhImoL7o8Y/2.jpg", "photos/1bktElPq9qafpUJsDUMw9zaEhImoL7o8Y/3.jpg", "photos/1bktElPq9qafpUJsDUMw9zaEhImoL7o8Y/4.jpg", "photos/1bktElPq9qafpUJsDUMw9zaEhImoL7o8Y/5.jpg"], "views": ["photos/1bktElPq9qafpUJsDUMw9zaEhImoL7o8Y/v1.jpg", "photos/1bktElPq9qafpUJsDUMw9zaEhImoL7o8Y/v2.jpg", "photos/1bktElPq9qafpUJsDUMw9zaEhImoL7o8Y/v3.jpg", "photos/1bktElPq9qafpUJsDUMw9zaEhImoL7o8Y/v4.jpg", "photos/1bktElPq9qafpUJsDUMw9zaEhImoL7o8Y/v5.jpg"], "rooms": 2, "size": "10' x 13'", "quantity": 1}, {"id": "1c2-ioAOoWAVifVkVmdJwpJ8Lp6yEZq_v", "title": "10' x 13' Infinity Shag Rug - LINEN", "price": "235", "condition": "", "description": "$235 OBO\n\nA linen ground provides a neutral, soft backdrop while a subtle, low-relief linear pattern gives the surface quiet depth and interest. The long, plush pile is machine made from 100% polyester and feels dense and cushiony underfoot; the yarns form gentle striations that add a layered, tactile quality across the field. The overall effect is a warm, subdued texture that complements a range of interiors without calling attention to itself.\n\nPlace this rug under a sofa grouping to anchor a living room, layer it at the foot of a bed for added comfort, or use it to define a seating area in an open-plan space. It pairs well with Scandinavian and contemporary schemes, natural wood furniture, soft linens, and brushed metal accents for a calm, modern look.", "photos": ["photos/1c2-ioAOoWAVifVkVmdJwpJ8Lp6yEZq_v/1.jpg", "photos/1c2-ioAOoWAVifVkVmdJwpJ8Lp6yEZq_v/2.jpg", "photos/1c2-ioAOoWAVifVkVmdJwpJ8Lp6yEZq_v/3.jpg", "photos/1c2-ioAOoWAVifVkVmdJwpJ8Lp6yEZq_v/4.jpg", "photos/1c2-ioAOoWAVifVkVmdJwpJ8Lp6yEZq_v/5.jpg"], "views": ["photos/1c2-ioAOoWAVifVkVmdJwpJ8Lp6yEZq_v/v1.jpg", "photos/1c2-ioAOoWAVifVkVmdJwpJ8Lp6yEZq_v/v2.jpg", "photos/1c2-ioAOoWAVifVkVmdJwpJ8Lp6yEZq_v/v3.jpg", "photos/1c2-ioAOoWAVifVkVmdJwpJ8Lp6yEZq_v/v4.jpg", "photos/1c2-ioAOoWAVifVkVmdJwpJ8Lp6yEZq_v/v5.jpg"], "rooms": 3, "size": "10' x 13'", "quantity": 1}, {"id": "17XyqaWUM0wINeAmLr_SJ_036TcgQiywd", "title": "10' x 13' 1 Lotus Rug - TEAL", "price": "160", "condition": "", "description": "$160 OBO\n\nAn abstract, painterly design softens the room with layered, distressed washes of color set against a teal background. Irregular patches of beige, ivory, light blue, and gray blend into one another in a watercolor-like pattern that balances contemporary and transitional aesthetics. The surface reads as gently worn and lived-in, giving the rug a subtle, artistic presence without a defined medallion or border.\n\nConstructed from 100% polypropylene, the rug has a low pile with a softly cushioned feel underfoot and a mild sheen that catches light without overpowering the palette. Pair it with light wood furniture and neutral upholstery for a coastal-modern look, use it to warm a serene bedroom with ivory linens and pale blues, or layer it in a transitional living room to add color and texture beneath a simple sofa and coffee table.", "photos": ["photos/17XyqaWUM0wINeAmLr_SJ_036TcgQiywd/1.jpg", "photos/17XyqaWUM0wINeAmLr_SJ_036TcgQiywd/2.jpg", "photos/17XyqaWUM0wINeAmLr_SJ_036TcgQiywd/3.jpg", "photos/17XyqaWUM0wINeAmLr_SJ_036TcgQiywd/4.jpg", "photos/17XyqaWUM0wINeAmLr_SJ_036TcgQiywd/5.jpg"], "views": ["photos/17XyqaWUM0wINeAmLr_SJ_036TcgQiywd/v1.jpg", "photos/17XyqaWUM0wINeAmLr_SJ_036TcgQiywd/v2.jpg", "photos/17XyqaWUM0wINeAmLr_SJ_036TcgQiywd/v3.jpg", "photos/17XyqaWUM0wINeAmLr_SJ_036TcgQiywd/v4.jpg", "photos/17XyqaWUM0wINeAmLr_SJ_036TcgQiywd/v5.jpg"], "rooms": 1, "size": "10' x 13' 1", "quantity": 1}, {"id": "1S4nVA0y_M20Rc4h8zFkfYVSrfyCXuBap", "title": "10' x 13' Nain Design Rug - IVORY", "price": "235", "condition": "", "description": "$235 OBO\n\nA dense pictorial paradise unfolds across this piece from the Nain Design Collection. Machine-made in Turkey from a blend of 85% polypropylene and 15% polyester, the rug showcases an intricate botanical and wildlife scene complete with graceful deer, birds, and flowering vines. A soft ivory and cream field provides a bright background for detailed accents of navy blue, soft blue, green, beige, and touches of burgundy. The textured high-low pile adds physical depth to the detailed floral borders and ornate pictorial motifs, offering a soft feel underfoot.\n\nThis grand 10x13 rectangular rug provides expansive floor coverage ideal for anchoring large formal living rooms, primary suites, or executive home offices. Place it beneath a traditional mahogany or walnut dining set, or position it under neutral linen seating to highlight its classic color palette. It pairs naturally with warm wood tones, brass hardware, and muted jewel tones throughout the home.", "photos": ["photos/1S4nVA0y_M20Rc4h8zFkfYVSrfyCXuBap/1.jpg", "photos/1S4nVA0y_M20Rc4h8zFkfYVSrfyCXuBap/2.jpg", "photos/1S4nVA0y_M20Rc4h8zFkfYVSrfyCXuBap/3.jpg", "photos/1S4nVA0y_M20Rc4h8zFkfYVSrfyCXuBap/4.jpg", "photos/1S4nVA0y_M20Rc4h8zFkfYVSrfyCXuBap/5.jpg"], "views": ["photos/1S4nVA0y_M20Rc4h8zFkfYVSrfyCXuBap/v1.jpg", "photos/1S4nVA0y_M20Rc4h8zFkfYVSrfyCXuBap/v2.jpg", "photos/1S4nVA0y_M20Rc4h8zFkfYVSrfyCXuBap/v3.jpg", "photos/1S4nVA0y_M20Rc4h8zFkfYVSrfyCXuBap/v4.jpg", "photos/1S4nVA0y_M20Rc4h8zFkfYVSrfyCXuBap/v5.jpg"], "rooms": 0, "size": "10' x 13'", "quantity": 1}];
 const KEY = "posted-rugs";
 let posted = {};
 try { posted = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
@@ -119,22 +212,39 @@ function getFiles(rug) {
   return files[rug.id];
 }
 
-function flash(btn, text) {
-  const was = btn.textContent;
-  btn.textContent = text; btn.classList.add("done");
-  setTimeout(() => { btn.textContent = was; btn.classList.remove("done"); }, 1500);
+let toastTimer;
+function toast(text) {
+  const t = document.getElementById("toast");
+  t.textContent = text; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 1600);
+}
+function buzz() { try { navigator.vibrate && navigator.vibrate(30); } catch (e) {} }
+
+const ICON = {
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/></svg>',
+  save: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M5 19.5h14"/></svg>',
+};
+function setLabel(btn, icon, text) { btn.innerHTML = ICON[icon]; btn.append(text); }
+
+// feedback: the button turns green with a check, a toast says what happened, the phone buzzes once
+function confirmDone(btn, icon, label, done, message) {
+  setLabel(btn, "check", done); btn.classList.add("ok"); buzz(); toast(message);
+  setTimeout(() => { setLabel(btn, icon, label); btn.classList.remove("ok"); }, 1600);
 }
 
-async function copy(text, btn) {
-  try { await navigator.clipboard.writeText(text); flash(btn, "Copied!"); }
+async function copy(text, btn, label, what) {
+  let ok = true;
+  try { await navigator.clipboard.writeText(text); }
   catch (e) {
     // older browsers: copy through a hidden text box
     const t = document.createElement("textarea");
     t.value = text; t.setAttribute("readonly", ""); t.style.position = "fixed"; t.style.opacity = "0";
     document.body.appendChild(t); t.select(); t.setSelectionRange(0, text.length);
-    const ok = document.execCommand("copy"); t.remove();
-    flash(btn, ok ? "Copied!" : "Copy failed");
+    ok = document.execCommand("copy"); t.remove();
   }
+  if (ok) confirmDone(btn, "copy", label, "Copied", `${what} copied`);
+  else toast("Couldn't copy. Press and hold the text instead.");
 }
 
 function showLarge(rug) {
@@ -154,7 +264,7 @@ function fileBase(title) {
 }
 
 // laptop (mouse or trackpad): download straight to the Downloads folder as Hermitage-1.jpg ...
-async function downloadPhotos(rug, btn) {
+async function downloadPhotos(rug, btn, label) {
   const base = fileBase(rug.title);
   const f = await getFiles(rug);
   for (let i = 0; i < f.length; i++) {
@@ -164,14 +274,14 @@ async function downloadPhotos(rug, btn) {
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     await new Promise(r => setTimeout(r, 250));  // browsers drop downloads fired all at once
   }
-  flash(btn, `Saved to Downloads`);
+  confirmDone(btn, "save", label, "Saved", `${f.length} photos saved to Downloads`);
 }
 
-async function savePhotos(rug, btn) {
-  if (!rug.photos.length) { flash(btn, "No photos"); return; }
+async function savePhotos(rug, btn, label) {
+  if (!rug.photos.length) { toast("No photos for this rug"); return; }
   // laptop and Android: straight to Downloads (Android shows them in Gallery); iPhone: share sheet
   if (matchMedia("(hover: hover) and (pointer: fine)").matches || /Android/i.test(navigator.userAgent)) {
-    try { await downloadPhotos(rug, btn); } catch (e) { showLarge(rug); }
+    try { await downloadPhotos(rug, btn, label); } catch (e) { showLarge(rug); }
     return;
   }
   try {
@@ -186,51 +296,110 @@ async function savePhotos(rug, btn) {
   showLarge(rug);
 }
 
-function card(rug) {
-  const el = document.createElement("article");
-  el.className = "card" + (posted[rug.id] ? " posted" : "");
-  if (rug.photos[0]) {
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function button(cls, icon, label, fn) {
+  const b = el("button", "btn " + cls); b.type = "button";
+  if (icon) setLabel(b, icon, label); else b.textContent = label;
+  b.onclick = () => fn(b);
+  return b;
+}
+
+function togglePosted(rug) {
+  if (posted[rug.id]) delete posted[rug.id]; else posted[rug.id] = Date.now();
+  savePosted(); queueMark(rug.id); buzz();
+  toast(posted[rug.id] ? "Moved to Done" : "Moved back to your listings");
+  render();
+}
+
+function gallery(rug) {
+  const gal = el("div", "gallery");
+  const slides = el("div", "slides");
+  rug.views.forEach((src, i) => {
     const img = document.createElement("img");
-    img.className = "hero"; img.src = rug.photos[0]; img.alt = rug.title; img.loading = "lazy";
-    el.appendChild(img);
+    img.src = src; img.alt = `${rug.title}, photo ${i + 1}`; img.loading = "lazy"; img.decoding = "async";
+    if (i >= rug.rooms) img.className = "product";  // product shots on white show whole; room shots fill the frame
+    slides.appendChild(img);
+  });
+  gal.appendChild(slides);
+  if (rug.views.length > 1) {
+    const dots = el("div", "dots");
+    rug.views.forEach((_, i) => dots.appendChild(el("i", i ? "" : "on")));
+    const badge = el("span", "badge", `1 / ${rug.views.length}`);
+    const update = () => {
+      const n = Math.round(slides.scrollLeft / slides.clientWidth);
+      [...dots.children].forEach((d, i) => d.classList.toggle("on", i === n));
+      badge.textContent = `${n + 1} / ${rug.views.length}`;
+    };
+    // "scrollend" catches the final photo when a phone batches scroll events during a fast swipe
+    slides.addEventListener("scroll", update, { passive: true });
+    slides.addEventListener("scrollend", update);
+    gal.append(dots, badge);
   }
-  const body = document.createElement("div"); body.className = "body";
-  const title = document.createElement("h2"); title.className = "title"; title.textContent = rug.title;
-  const facts = document.createElement("div"); facts.className = "facts";
-  const price = document.createElement("div"); price.className = "price"; price.textContent = rug.price ? "$" + rug.price : "$?";
-  const cond = document.createElement("div"); cond.className = "cond";
-  cond.append("Condition: ", Object.assign(document.createElement("b"), { textContent: rug.condition || "?" }));
-  facts.append(price, cond);
-  const desc = document.createElement("p"); desc.className = "desc"; desc.textContent = rug.description;
-  const more = document.createElement("button"); more.className = "more"; more.textContent = "Show full description";
-  more.onclick = () => { desc.classList.toggle("open"); more.textContent = desc.classList.contains("open") ? "Show less" : "Show full description"; };
-  const btns = document.createElement("div"); btns.className = "btns";
-  const mk = (label, cls, fn) => { const b = document.createElement("button"); b.className = "big " + cls; b.textContent = label; b.onclick = () => fn(b); return b; };
-  btns.append(
-    mk(`Save ${rug.photos.length} photos`, "primary", b => savePhotos(rug, b)),
-    mk("Copy title", "", b => copy(rug.title, b)),
-    mk("Copy description", "", b => copy(rug.description, b)),
-    mk(posted[rug.id] ? "Posted ✓  (tap to undo)" : "Mark as posted", "posted-btn", () => {
-      if (posted[rug.id]) delete posted[rug.id]; else posted[rug.id] = Date.now();
-      savePosted(); queueMark(rug.id); render();
-    }),
+  return gal;
+}
+
+function card(rug) {
+  const c = el("article", "card");
+  if (rug.views.length) c.appendChild(gallery(rug));
+  const body = el("div", "body");
+  const price = el("p", "price", rug.price ? "$" + rug.price : "$?");
+  price.appendChild(el("small", "", "OBO"));
+  const tags = el("ul", "tags");
+  if (rug.size) tags.appendChild(el("li", "", rug.size));
+  tags.appendChild(el("li", rug.condition ? "" : "unknown", "Condition: " + (rug.condition || "?")));
+  tags.appendChild(el("li", "", "Qty " + rug.quantity));
+  const desc = el("details", "desc");
+  desc.append(el("summary", "", "Description"), el("p", "", rug.description));
+  const saveLabel = `Save ${rug.photos.length} photo${rug.photos.length === 1 ? "" : "s"}`;
+  const pair = el("div", "pair");
+  pair.append(
+    button("tonal", "copy", "Copy title", b => copy(rug.title, b, "Copy title", "Title")),
+    button("tonal", "copy", "Copy description", b => copy(rug.description, b, "Copy description", "Description")),
   );
-  body.append(title, facts, desc, more, btns);
-  el.appendChild(body);
-  // start downloading this rug's photos once its card is near the screen
+  const actions = el("div", "actions");
+  actions.append(
+    button("primary", "save", saveLabel, b => savePhotos(rug, b, saveLabel)),
+    pair,
+    button("text", null, "Mark as posted", () => togglePosted(rug)),
+  );
+  body.append(el("h2", "title", rug.title), price, tags, desc, actions);
+  c.appendChild(body);
+  // fetch full-size photos only for the card on screen, so the share sheet opens instantly
   new IntersectionObserver((entries, obs) => {
     if (entries.some(e => e.isIntersecting)) { getFiles(rug).catch(() => {}); obs.disconnect(); }
-  }, { rootMargin: "400px" }).observe(el);
-  return el;
+  }, { threshold: 0.5 }).observe(c);
+  return c;
+}
+
+function doneRow(rug) {
+  const r = el("div", "done-row");
+  const img = document.createElement("img"); img.src = rug.views[0] || ""; img.alt = ""; img.loading = "lazy";
+  const t = el("div", "t"); t.append(el("b", "", rug.title), "$" + rug.price);
+  r.append(img, t, button("text", null, "Undo", () => togglePosted(rug)));
+  return r;
 }
 
 function render() {
-  const order = [...RUGS].sort((a, b) => (posted[a.id] ? 1 : 0) - (posted[b.id] ? 1 : 0));
-  document.getElementById("list").replaceChildren(...order.map(card));
-  const left = RUGS.filter(r => !posted[r.id]).length;
-  document.getElementById("count").textContent = `${left} of ${RUGS.length} rugs left to post`;
+  const open = RUGS.filter(r => !posted[r.id]);
+  const done = RUGS.filter(r => posted[r.id]);
+  const list = document.getElementById("list");
+  list.replaceChildren(...open.map(card));
+  if (!open.length) list.appendChild(el("div", "empty", "Every rug is posted."));
+  document.getElementById("done-section").hidden = !done.length;
+  document.getElementById("done-label").textContent = `Done (${done.length})`;
+  document.getElementById("done-list").replaceChildren(...done.map(doneRow));
+  document.getElementById("count").textContent = `${done.length} of ${RUGS.length} posted`;
+  document.getElementById("left").textContent = open.length ? `${open.length} to go` : "All done";
+  document.getElementById("bar").style.width = `${Math.round(100 * done.length / RUGS.length)}%`;
 }
 
+addEventListener("scroll", () => document.getElementById("top").classList.toggle("scrolled", scrollY > 4), { passive: true });
 document.getElementById("close").onclick = () => { document.getElementById("viewer").hidden = true; };
 render();
 flush();
