@@ -300,25 +300,34 @@ function showLarge(rug) {
   document.getElementById("viewer").scrollTop = 0;
 }
 
-// "10' x 10' Hermitage Round Rug - SNOW WHITE" -> "Hermitage"
+// "10' x 10' Hermitage Round Rug - SNOW WHITE" -> "Hermitage-Snow-White".
+// The colour has to stay in the name: two of these rugs are both called Oregon,
+// and without it their photos would overwrite each other in Downloads.
 function fileBase(title) {
-  const name = title.split(" - ")[0].replace(/^[\d' x]+(?=[A-Za-z])/, "")
+  const [front, colour = ""] = title.split(" - ");
+  const name = front.replace(/^[\d' x]+(?=[A-Za-z])/, "")
     .replace(/\b(Round|Square|Area|Rug|Runner|Oval)\b/g, "").trim();
-  return name.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "rug";
+  const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const joined = [slug(name), slug(colour)].filter(Boolean).join("-") || "rug";
+  return joined.replace(/(^|-)([a-z])/g, (m, dash, c) => dash + c.toUpperCase());
 }
 
-// laptop (mouse or trackpad): download straight to the Downloads folder as Hermitage-1.jpg ...
+// Laptop and Android: each rug's photos go into their own folder, so she opens
+// Downloads > Rugs > Hermitage-Snow-White and drags all five straight into the listing.
 async function downloadPhotos(rug, btn, label) {
   const base = fileBase(rug.title);
   const f = await getFiles(rug);
   for (let i = 0; i < f.length; i++) {
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(f[i]); a.download = `${base}-${i + 1}.jpg`;
+    a.href = URL.createObjectURL(f[i]);
+    // Chrome and Edge create the folders; Safari and Firefox drop the path and
+    // keep the file name, which is why the rug's name is in both.
+    a.download = `Rugs/${base}/${base}-${i + 1}.jpg`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     await new Promise(r => setTimeout(r, 250));  // browsers drop downloads fired all at once
   }
-  confirmDone(btn, "save", label, "Saved", `${f.length} photos saved to Downloads`);
+  confirmDone(btn, "save", label, "Saved", `Downloads › Rugs › ${base}`);
 }
 
 async function savePhotos(rug, btn, label) {
