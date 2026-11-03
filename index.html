@@ -156,6 +156,7 @@ footer { margin-top: 28px; text-align: center; color: var(--muted); font-size: .
     </div>
     <div class="setting">
       <label><input type="checkbox" id="obo"> Add "OBO" to prices</label>
+      <button class="btn text" type="button" id="pickdir" hidden></button>
     </div>
   </div>
 </div>
@@ -312,26 +313,72 @@ function fileBase(title) {
   return joined.replace(/(^|-)([a-z])/g, (m, dash, c) => dash + c.toUpperCase());
 }
 
-// Laptop and Android: each rug's photos go into their own folder, so she opens
-// Downloads > Rugs > Hermitage-Snow-White and drags all five straight into the listing.
+// Chrome and Edge can write into a folder she picks, so each rug's five photos land
+// together in their own folder instead of loose in Downloads. She picks the folder once;
+// after that every Save drops a new folder inside it, ready to select all and drag in.
+let saveDir = null;
+const canPickDir = typeof window.showDirectoryPicker === "function";
+
+async function pickDir() {
+  try {
+    saveDir = await showDirectoryPicker({ id: "rugs", mode: "readwrite", startIn: "downloads" });
+    showDirLabel();
+    return true;
+  } catch (e) { return false; }  // she closed the picker
+}
+
+function showDirLabel() {
+  const b = document.getElementById("pickdir");
+  if (!canPickDir) return;
+  b.hidden = false;
+  b.textContent = saveDir ? `Saving to ${saveDir.name}` : "Choose where photos save";
+}
+
+async function writeToDir(rug) {
+  const base = fileBase(rug.title);
+  const f = await getFiles(rug);
+  const dir = await saveDir.getDirectoryHandle(base, { create: true });
+  for (let i = 0; i < f.length; i++) {
+    const handle = await dir.getFileHandle(`${base}-${i + 1}.jpg`, { create: true });
+    const w = await handle.createWritable();
+    await w.write(f[i]);
+    await w.close();
+  }
+  return base;
+}
+
+// Fallback when she hasn't picked a folder, or on a browser without the API:
+// straight to Downloads, with the rug's name on every file so they stay findable.
 async function downloadPhotos(rug, btn, label) {
   const base = fileBase(rug.title);
   const f = await getFiles(rug);
   for (let i = 0; i < f.length; i++) {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(f[i]);
-    // Chrome and Edge create the folders; Safari and Firefox drop the path and
-    // keep the file name, which is why the rug's name is in both.
-    a.download = `Rugs/${base}/${base}-${i + 1}.jpg`;
+    a.download = `${base}-${i + 1}.jpg`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     await new Promise(r => setTimeout(r, 250));  // browsers drop downloads fired all at once
   }
-  confirmDone(btn, "save", label, "Saved", `Downloads › Rugs › ${base}`);
+  confirmDone(btn, "save", label, "Saved", `${f.length} photos → Downloads`);
 }
 
 async function savePhotos(rug, btn, label) {
   if (!rug.photos.length) { toast("No photos for this rug"); return; }
+
+  // Best case: write the five photos into their own folder inside the one she picked.
+  // The first Save asks her where; after that it just happens.
+  if (canPickDir) {
+    if (!saveDir) { toast("Pick a folder to save into"); if (!await pickDir()) return; }
+    try {
+      const base = await writeToDir(rug);
+      confirmDone(btn, "save", label, "Saved", `${saveDir.name} › ${base}`);
+      return;
+    } catch (e) {
+      saveDir = null; showDirLabel();  // permission withdrawn or folder gone
+    }
+  }
+
   // laptop and Android: straight to Downloads (Android shows them in Gallery); iPhone: share sheet
   if (matchMedia("(hover: hover) and (pointer: fine)").matches || /Android/i.test(navigator.userAgent)) {
     try { await downloadPhotos(rug, btn, label); } catch (e) { showLarge(rug); }
@@ -485,6 +532,8 @@ document.getElementById("close").onclick = () => { document.getElementById("view
 const oboBox = document.getElementById("obo");
 oboBox.checked = !!opts.obo;
 oboBox.onchange = () => { opts.obo = oboBox.checked; saveOpts(); render(); };
+document.getElementById("pickdir").onclick = pickDir;
+showDirLabel();
 render();
 flush();
 addEventListener("online", flush);
