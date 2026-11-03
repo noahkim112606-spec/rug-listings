@@ -319,9 +319,39 @@ function fileBase(title) {
 let saveDir = null;
 const canPickDir = typeof window.showDirectoryPicker === "function";
 
+// The folder she picks is remembered between visits, so she is only ever asked once.
+// A folder handle can't go in localStorage, so it lives in a one-row IndexedDB store.
+function dirStore(mode, fn) {
+  return new Promise(resolve => {
+    const open = indexedDB.open("rug-dir", 1);
+    open.onupgradeneeded = () => open.result.createObjectStore("h");
+    open.onerror = () => resolve(null);
+    open.onsuccess = () => {
+      const req = fn(open.result.transaction("h", mode).objectStore("h"));
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    };
+  });
+}
+
+async function rememberDir(handle) { await dirStore("readwrite", s => s.put(handle, "dir")); }
+
+async function restoreDir() {
+  if (!canPickDir) return;
+  const handle = await dirStore("readonly", s => s.get("dir"));
+  if (!handle) return;
+  // Chrome usually re-grants a folder she has used before without asking again
+  try {
+    if (await handle.queryPermission({ mode: "readwrite" }) === "granted") saveDir = handle;
+    else if (await handle.requestPermission({ mode: "readwrite" }) === "granted") saveDir = handle;
+  } catch (e) {}
+  showDirLabel();
+}
+
 async function pickDir() {
   try {
     saveDir = await showDirectoryPicker({ id: "rugs", mode: "readwrite", startIn: "downloads" });
+    await rememberDir(saveDir);
     showDirLabel();
     return true;
   } catch (e) { return false; }  // she closed the picker
@@ -534,6 +564,7 @@ oboBox.checked = !!opts.obo;
 oboBox.onchange = () => { opts.obo = oboBox.checked; saveOpts(); render(); };
 document.getElementById("pickdir").onclick = pickDir;
 showDirLabel();
+restoreDir();
 render();
 flush();
 addEventListener("online", flush);
