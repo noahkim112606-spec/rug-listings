@@ -104,6 +104,21 @@ details.desc p { margin: 8px 0 0; font-size: .95rem; color: var(--ink); white-sp
 .pair .btn { font-size: .95rem; padding: 10px 8px; }
 .pair .btn:not(.ok) svg { display: none; }  /* keeps "Copy description" on one line on small phones */
 
+/* drag strip: pick up all of a rug's photos at once and drop them straight on
+   Facebook's upload box, so there's no trip through the Downloads folder.
+   Only shown where there's a mouse or trackpad — you can't drag on a phone. */
+.drag { display: none; align-items: center; gap: 12px; padding: 8px 12px 8px 10px; cursor: grab;
+  border: 1px dashed var(--line); border-radius: 14px; background: var(--surface); }
+.drag:active { cursor: grabbing; transform: scale(.995); }
+.drag .thumbs { display: flex; flex: none; }
+.drag .thumbs img { width: 34px; height: 34px; border-radius: 8px; object-fit: cover; margin-left: -12px;
+  border: 2px solid var(--surface); background: var(--photo-bg); pointer-events: none; }
+.drag .thumbs img:first-child { margin-left: 0; }
+.drag .t { min-width: 0; display: flex; flex-direction: column; }
+.drag b { font-size: .92rem; font-weight: 600; }
+.drag em { font-style: normal; font-size: .82rem; color: var(--muted); }
+@media (hover: hover) and (pointer: fine) { .drag { display: flex; } }
+
 /* done section */
 details.done-section { margin-top: 10px; }
 details.done-section > summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center;
@@ -181,6 +196,7 @@ const KEY = "posted-rugs";
 let posted = {};
 try { posted = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
 const files = {};  // rug id -> Promise<File[]>, fetched ahead so the share sheet opens right away
+const ready = {};  // rug id -> File[] once fetched; a drag has to hand over files synchronously
 
 function savePosted() { try { localStorage.setItem(KEY, JSON.stringify(posted)); } catch (e) {} }
 
@@ -248,10 +264,11 @@ function queueMark(id) {
 
 function getFiles(rug) {
   if (!files[rug.id]) {
+    const base = fileBase(rug.title);
     files[rug.id] = Promise.all(rug.photos.map(async (src, i) => {
       const blob = await (await fetch(src)).blob();
-      return new File([blob], `rug-${i + 1}.jpg`, { type: "image/jpeg" });
-    }));
+      return new File([blob], `${base}-${i + 1}.jpg`, { type: "image/jpeg" });
+    })).then(f => (ready[rug.id] = f));
   }
   return files[rug.id];
 }
@@ -397,6 +414,33 @@ function gallery(rug) {
   return gal;
 }
 
+// Grab all of a rug's photos and drop them on Facebook's upload box. The files have to be
+// handed over synchronously during dragstart, which is why they're fetched ahead of time.
+function dragStrip(rug) {
+  const d = el("div", "drag");
+  d.draggable = true;
+  d.title = "Drag onto the photo box in Facebook Marketplace";
+  const thumbs = el("div", "thumbs");
+  rug.photos.slice(0, 4).forEach(src => {
+    const img = document.createElement("img");
+    img.src = src; img.alt = ""; img.loading = "lazy"; img.decoding = "async";
+    thumbs.appendChild(img);
+  });
+  const t = el("div", "t");
+  t.append(
+    el("b", "", `Drag ${rug.photos.length} photos into Facebook`),
+    el("em", "", "or use Save below"),
+  );
+  d.append(thumbs, t);
+  d.addEventListener("dragstart", e => {
+    const f = ready[rug.id];
+    if (!f || !f.length) { e.preventDefault(); toast("Photos are still loading, one second"); return; }
+    e.dataTransfer.effectAllowed = "copy";
+    f.forEach(file => e.dataTransfer.items.add(file));
+  });
+  return d;
+}
+
 // a tag you can tap to fill in
 function chip(text, isSet, fn) {
   const li = el("li", "tap" + (isSet ? " set" : ""), text);
@@ -444,6 +488,7 @@ function card(rug) {
     button("tonal", "copy", "Copy description", b => copy(fullDescription(rug), b, "Copy description", "Description")),
   );
   const actions = el("div", "actions");
+  if (rug.photos.length) actions.appendChild(dragStrip(rug));
   actions.append(
     button("primary", "save", saveLabel, b => savePhotos(rug, b, saveLabel)),
     pair,
