@@ -507,6 +507,14 @@ function card(rug) {
     saveFields();
   }));
 
+  // the dropdown she picks on Marketplace — same for every rug in the lot, shown here
+  // so she doesn't have to scroll back up while the form is open
+  tags.appendChild(chip(opts.category, true, () => {
+    const v = prompt("What category do these go under?", opts.category);
+    if (v === null || !v.trim()) return;
+    opts.category = v.trim(); saveOpts(); showCategory();
+  }));
+
   // the manufacturer's price, so buyers can compare — goes into the description
   tags.appendChild(chip(f.retail ? "Retails $" + f.retail : "Retail: tap to add", !!f.retail, () => {
     const v = prompt("What does the manufacturer sell it for?", f.retail || "");
@@ -520,16 +528,12 @@ function card(rug) {
   const desc = el("details", "desc");
   desc.append(el("summary", "", "Description"), el("p", "", fullDescription(rug)));
   const saveLabel = `Save ${rug.photos.length} photo${rug.photos.length === 1 ? "" : "s"}`;
-  // one button per box on Facebook's form, in the order she fills them in
+  // Only the typed boxes get a copy button. Category and condition are dropdowns on
+  // Marketplace and won't take a paste, so those are shown as tags to read off instead.
   const pair = el("div", "pair");
   pair.append(
     button("tonal", "copy", "Copy title", b => copy(rug.title, b, "Copy title", "Title")),
     button("tonal", "copy", "Copy price", b => copy(rug.price, b, "Copy price", "Price")),
-    button("tonal", "copy", "Copy category", b => copy(opts.category, b, "Copy category", "Category")),
-    button("tonal", "copy", "Copy condition", b => {
-      if (!cond) { toast("Tap the Condition tag above first"); return; }
-      copy(cond, b, "Copy condition", "Condition");
-    }),
   );
   const descBtn = button("tonal", "copy", "Copy description", b => copy(fullDescription(rug), b, "Copy description", "Description"));
   descBtn.classList.add("wide");
