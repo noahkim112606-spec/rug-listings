@@ -76,6 +76,12 @@ main { display: flex; flex-direction: column; gap: 18px; padding-top: 6px; }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .tags li { font-size: .82rem; padding: 4px 10px; border-radius: 999px; background: var(--sunken); color: var(--ink); }
 .tags li.unknown { color: var(--muted); }
+.tags li.tap { cursor: pointer; border: 1px dashed var(--line); background: none; color: var(--muted); padding: 3px 9px; }
+.tags li.tap.set { border-style: solid; border-color: transparent; background: var(--sunken); color: var(--ink); }
+.tags li.tap:active { transform: scale(.97); }
+.setting { display: flex; align-items: center; justify-content: space-between; font-size: .9rem; color: var(--muted); }
+.setting label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; min-height: 32px; }
+.setting input { width: 18px; height: 18px; accent-color: var(--ink); }
 
 details.desc { border-top: 1px solid var(--line); padding-top: 10px; }
 details.desc summary { cursor: pointer; color: var(--muted); font-size: .95rem; list-style: none; display: flex; justify-content: space-between; align-items: center; min-height: 32px; }
@@ -148,6 +154,9 @@ footer { margin-top: 28px; text-align: center; color: var(--muted); font-size: .
       <div class="row"><b id="count"></b><span id="left"></span></div>
       <div class="bar"><span id="bar"></span></div>
     </div>
+    <div class="setting">
+      <label><input type="checkbox" id="obo"> Add "OBO" to prices</label>
+    </div>
   </div>
 </div>
 <div class="wrap">
@@ -174,6 +183,41 @@ try { posted = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
 const files = {};  // rug id -> Promise<File[]>, fetched ahead so the share sheet opens right away
 
 function savePosted() { try { localStorage.setItem(KEY, JSON.stringify(posted)); } catch (e) {} }
+
+// Per-rug fields she fills in: the Marketplace condition, and the manufacturer's price
+// she shows buyers so they can compare. Both are remembered on her phone.
+const FIELDS_KEY = "rug-fields";
+let fields = {};
+try { fields = JSON.parse(localStorage.getItem(FIELDS_KEY) || "{}"); } catch (e) {}
+function saveFields() { try { localStorage.setItem(FIELDS_KEY, JSON.stringify(fields)); } catch (e) {} }
+function fieldsFor(id) { return fields[id] || (fields[id] = {}); }
+
+// Facebook Marketplace's own wording, in the order it lists them
+const CONDITIONS = ["New", "Used - like new", "Used - good", "Used - fair"];
+
+const OPTS_KEY = "rug-opts";
+let opts = { obo: true };
+try { Object.assign(opts, JSON.parse(localStorage.getItem(OPTS_KEY) || "{}")); } catch (e) {}
+function saveOpts() { try { localStorage.setItem(OPTS_KEY, JSON.stringify(opts)); } catch (e) {} }
+
+// The generated description starts with its own price line. Strip it so we can rebuild
+// the top from the current price, the OBO setting and the retail comparison.
+function bodyOf(rug) {
+  const parts = rug.description.split("\n\n");
+  return (parts.length > 1 && /^\$[\d,]+/.test(parts[0].trim()) ? parts.slice(1) : parts).join("\n\n");
+}
+
+function priceLine(rug) {
+  return "$" + rug.price + (opts.obo ? " OBO" : "");
+}
+
+function fullDescription(rug) {
+  const retail = fieldsFor(rug.id).retail;
+  const lines = [priceLine(rug)];
+  if (retail) lines.push(`Retails for $${retail}. Yours for $${rug.price}.`);
+  lines.push(bodyOf(rug));
+  return lines.join("\n\n");
+}
 
 // Sheet sync: each tap is queued on the phone and sent to the sheet; anything that fails
 // (no internet) stays queued and is sent again the next time the page opens.
@@ -344,23 +388,51 @@ function gallery(rug) {
   return gal;
 }
 
+// a tag you can tap to fill in
+function chip(text, isSet, fn) {
+  const li = el("li", "tap" + (isSet ? " set" : ""), text);
+  li.tabIndex = 0; li.setAttribute("role", "button");
+  const go = () => { fn(); buzz(); render(); };
+  li.onclick = go;
+  li.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } };
+  return li;
+}
+
 function card(rug) {
   const c = el("article", "card");
   if (rug.views.length) c.appendChild(gallery(rug));
   const body = el("div", "body");
+  const f = fieldsFor(rug.id);
   const price = el("p", "price", rug.price ? "$" + rug.price : "$?");
-  price.appendChild(el("small", "", "OBO"));
+  if (opts.obo) price.appendChild(el("small", "", "OBO"));
   const tags = el("ul", "tags");
   if (rug.size) tags.appendChild(el("li", "", rug.size));
-  tags.appendChild(el("li", rug.condition ? "" : "unknown", "Condition: " + (rug.condition || "?")));
+
+  // tap to step through Marketplace's own condition options
+  const cond = f.condition || rug.condition || "";
+  tags.appendChild(chip(cond || "Condition: tap to set", !!cond, () => {
+    const i = CONDITIONS.indexOf(cond);
+    f.condition = CONDITIONS[(i + 1) % CONDITIONS.length];
+    saveFields();
+  }));
+
+  // the manufacturer's price, so buyers can compare — goes into the description
+  tags.appendChild(chip(f.retail ? "Retails $" + f.retail : "Retail: tap to add", !!f.retail, () => {
+    const v = prompt("What does the manufacturer sell it for?", f.retail || "");
+    if (v === null) return;
+    const n = v.replace(/[^\d]/g, "");
+    if (n) f.retail = n; else delete f.retail;
+    saveFields();
+  }));
+
   tags.appendChild(el("li", "", "Qty " + rug.quantity));
   const desc = el("details", "desc");
-  desc.append(el("summary", "", "Description"), el("p", "", rug.description));
+  desc.append(el("summary", "", "Description"), el("p", "", fullDescription(rug)));
   const saveLabel = `Save ${rug.photos.length} photo${rug.photos.length === 1 ? "" : "s"}`;
   const pair = el("div", "pair");
   pair.append(
     button("tonal", "copy", "Copy title", b => copy(rug.title, b, "Copy title", "Title")),
-    button("tonal", "copy", "Copy description", b => copy(rug.description, b, "Copy description", "Description")),
+    button("tonal", "copy", "Copy description", b => copy(fullDescription(rug), b, "Copy description", "Description")),
   );
   const actions = el("div", "actions");
   actions.append(
@@ -401,6 +473,9 @@ function render() {
 
 addEventListener("scroll", () => document.getElementById("top").classList.toggle("scrolled", scrollY > 4), { passive: true });
 document.getElementById("close").onclick = () => { document.getElementById("viewer").hidden = true; };
+const oboBox = document.getElementById("obo");
+oboBox.checked = !!opts.obo;
+oboBox.onchange = () => { opts.obo = oboBox.checked; saveOpts(); render(); };
 render();
 flush();
 addEventListener("online", flush);
