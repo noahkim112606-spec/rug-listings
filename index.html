@@ -159,6 +159,7 @@ footer { margin-top: 28px; text-align: center; color: var(--muted); font-size: .
     <div class="setting">
       <label><input type="checkbox" id="obo"> Add "OBO" to prices</label>
       <button class="btn text" type="button" id="category"></button>
+      <button class="btn text" type="button" id="allcond"></button>
       <button class="btn text" type="button" id="pickdir" hidden></button>
     </div>
   </div>
@@ -200,9 +201,12 @@ function fieldsFor(id) { return fields[id] || (fields[id] = {}); }
 const CONDITIONS = ["New", "Used - like new", "Used - good", "Used - fair"];
 
 const OPTS_KEY = "rug-opts";
-// Everything in a lot is usually the same kind of thing, so the category is set once
-// for all of them rather than per rug.
-let opts = { obo: true, category: "Rugs" };
+// A lot is almost always one kind of item in one rough state, so category and condition
+// are set once for all of them. Tapping a rug's own tag overrides just that one.
+// "Used - like new" is what nearly all her past listings said, and neither manifest
+// carries a usable condition: the rug lot has no column, the Wayfair one only says
+// "Returns" for every row.
+let opts = { obo: true, category: "Rugs", condition: "Used - like new" };
 try { Object.assign(opts, JSON.parse(localStorage.getItem(OPTS_KEY) || "{}")); } catch (e) {}
 function saveOpts() { try { localStorage.setItem(OPTS_KEY, JSON.stringify(opts)); } catch (e) {} }
 
@@ -499,9 +503,9 @@ function card(rug) {
   const tags = el("ul", "tags");
   if (rug.size) tags.appendChild(el("li", "", rug.size));
 
-  // tap to step through Marketplace's own condition options
-  const cond = f.condition || rug.condition || "";
-  tags.appendChild(chip(cond || "Condition: tap to set", !!cond, () => {
+  // Starts on the lot's default. Tap to step through Marketplace's options for this rug only.
+  const cond = f.condition || rug.condition || opts.condition;
+  tags.appendChild(chip(cond, true, () => {
     const i = CONDITIONS.indexOf(cond);
     f.condition = CONDITIONS[(i + 1) % CONDITIONS.length];
     saveFields();
@@ -588,6 +592,20 @@ catBtn.onclick = () => {
   opts.category = v.trim(); saveOpts(); showCategory(); render();
 };
 showCategory();
+
+// Changing the lot default clears the per-rug overrides, so "they're all like new"
+// is one tap rather than 455.
+const allCond = document.getElementById("allcond");
+function showAllCond() { allCond.textContent = `All: ${opts.condition}`; }
+allCond.onclick = () => {
+  const i = CONDITIONS.indexOf(opts.condition);
+  opts.condition = CONDITIONS[(i + 1) % CONDITIONS.length];
+  saveOpts();
+  for (const id in fields) delete fields[id].condition;
+  saveFields(); showAllCond(); render();
+};
+showAllCond();
+
 document.getElementById("pickdir").onclick = pickDir;
 showDirLabel();
 restoreDir();
